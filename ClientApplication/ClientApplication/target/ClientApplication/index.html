@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Garment Search</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        label {
+            margin-right: 10px;
+        }
+
+        select {
+            padding: 8px;
+            margin-right: 20px;
+        }
+
+        button {
+            padding: 8px 20px;
+            cursor: pointer;
+        }
+
+        table {
+            margin-top: 30px;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #eeeeee;
+        }
+
+        #message {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Garment Search</h2>
+
+    <label>Category:</label>
+
+    <select id="category">
+        <option value="mens wear">Mens Wear</option>
+        <option value="women wear">Womens Wear</option>
+        <option value="children wear">Children Wear</option>
+    </select>
+
+    <label>Price Range:</label>
+
+    <select id="priceRange">
+        <option value="500-1000">500-1000</option>
+        <option value="1001-1500">1001-1500</option>
+        <option value=">1500">Above 1500</option>
+    </select>
+
+    <button onclick="searchGarments()">Search</button>
+
+    <div id="message"></div>
+
+    <table id="garmentTable">
+        <thead>
+            <tr>
+                <th>Garment Name</th>
+                <th>Size</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Stock</th>
+            </tr>
+        </thead>
+
+        <tbody id="garmentBody">
+        </tbody>
+    </table>
+
+    <script>
+
+        function searchGarments() {
+
+            const category =
+                document.getElementById("category").value;
+
+            const priceRange =
+                document.getElementById("priceRange").value;
+
+            document.getElementById("message").innerHTML =
+                "Searching...";
+
+            fetch(
+                "rest/client/garments?category="
+                + encodeURIComponent(category)
+                + "&priceRange="
+                + encodeURIComponent(priceRange)
+            )
+            .then(response => {
+
+                if (!response.ok) {
+                    throw new Error(
+                        "Request failed: " + response.status
+                    );
+                }
+
+                return response.json();
+            })
+            .then(data => {
+
+                const tbody =
+                    document.getElementById("garmentBody");
+
+                tbody.innerHTML = "";
+
+                if (data.length === 0) {
+
+                    document.getElementById("message").innerHTML =
+                        "No garments found.";
+
+                    return;
+                }
+
+                document.getElementById("message").innerHTML =
+                    "";
+
+                data.forEach(garment => {
+
+                    const row =
+                        document.createElement("tr");
+
+                    row.innerHTML =
+                        "<td>" + garment.garmentname + "</td>"
+                        + "<td>" + garment.size + "</td>"
+                        + "<td>" + garment.description + "</td>"
+                        + "<td>" + garment.price + "</td>"
+                        + "<td>" + garment.stock + "</td>";
+
+                    tbody.appendChild(row);
+                });
+            })
+            .catch(error => {
+
+                document.getElementById("message").innerHTML =
+                    "Error: " + error.message;
+            });
+        }
+
+    </script>
+
+</body>
+</html>

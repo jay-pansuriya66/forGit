@@ -1,0 +1,9 @@
+com\garments\service\GarmentsResource.class
+com\mycompany\garmentsappication\service\HealthCheckService.class
+com\mycompany\garmentsappication\config\Producers.class
+com\mycompany\garmentsappication\service\ExampleService.class
+Entity\Garmentmaster.class
+com\mycompany\garmentsappication\config\BootStrap.class
+com\mycompany\garmentsappication\config\CrossOriginResourceSharingFilter.class
+com\mycompany\garmentsappication\service\package-info.class
+com\garments\dao\GarmentsDAO.class

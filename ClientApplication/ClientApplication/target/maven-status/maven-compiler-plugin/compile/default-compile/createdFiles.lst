@@ -1,0 +1,10 @@
+com\mycompany\clientapplication\service\package-info.class
+client\config\ApplicationConfig.class
+client\TestClient.class
+com\mycompany\clientapplication\config\BootStrap.class
+com\mycompany\clientapplication\service\ExampleService.class
+client\resource\ClientResource.class
+com\mycompany\clientapplication\config\CrossOriginResourceSharingFilter.class
+com\mycompany\clientapplication\config\Producers.class
+com\mycompany\clientapplication\service\HealthCheckService.class
+client\GarmentClient.class
