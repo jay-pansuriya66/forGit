@@ -1,0 +1,534 @@
+========= msa step =================
+
+1. file hase j to database banava nu ne data add karva na 
+
+2. pachi payara server ma jai ne pool and resource banava nu
+
+3. create persistence.xml in other source package name META-INF connect resource
+
+4. new package banavi ne aema entty banava ni code mate 
+		ne manytomany je master table mathi data fatch karave aema 
+    @JsonbTransient add karva nu  @ManyToMany upper
+    
+5. now create service in that write your logic
+
+6. after that make resource in that write your logic
+
+7. create server.config package inside :
+		@ApplicationPath("/rest")
+		public class Applicationconfig extends Application {
+		}
+
+8. create properties inside META-INF 
+
+9. now put your java file inside your project and open in terminal then
+		"java -jar 'tab'"
+    
+10. make changes in "jwt-token.json" groups
+
+11. again step 9
+
+12. microprofile-config.properties and put it into property file in netbeans
+
+13. now add @RolesAllowed in resources file 
+
+14. inside the bootstrap.java add :
+		@LoginConfig(authMethod = "MP-JWT")
+		@RolesAllowed({"TRAVELLER"})
+    
+
+
+client sidew : 
+
+ 1. create same project as server 
+ 
+ 
+  2. source package create bus service for client and create getToken ()
+  
+  3. create client Resource and call bus client get function
+  
+  4. create config same as server config same as step 7
+  
+  5. put jwt-string = token in microprofile-config.properties in META-INF file 
+  
+  6. in web page new html and html code 
+    
+    ===========================  admin service +===========================
+    
+package Service.dao;
+
+import Entity.Busmaster;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import java.util.Collection;
+
+/**
+ *
+ * @author ASUS
+ */
+@ApplicationScoped
+public class BusService {
+
+    @PersistenceContext(unitName = "BUSPU")
+    private EntityManager em;
+
+     public Collection<Busmaster> getbuses(String source, String destination) {
+
+        return em.createNativeQuery(
+                "SELECT b.* " +
+                "FROM busmaster b " +
+                "JOIN bus_route br ON b.busid = br.busid " +
+                "JOIN routes r ON br.routeid = r.routeid " +
+                "WHERE r.source = ?1 " +
+                "AND r.destination = ?2",
+                Busmaster.class
+        )
+        .setParameter(1, source)
+        .setParameter(2, destination)
+        .getResultList();
+    }
+}
+
+ ===========================  admin resource +===========================
+package BusResource;
+
+import Entity.Busmaster;
+import Service.dao.BusService;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import java.util.Collection;
+
+
+@Path("/bus")
+@Produces(MediaType.APPLICATION_JSON)
+public class BusResource {
+
+    @Inject
+    private BusService busService;
+
+    @GET
+    @Path("/getBuses")
+    @RolesAllowed("TRAVELLER")
+    public Collection<Busmaster> getBuses(
+            @QueryParam("source") String source,
+            @QueryParam("destination") String destination) {
+
+        return busService.getbuses(source, destination);
+    }
+}
+
+===========================  admin bootstrap changes +===========================
+
+@SuppressWarnings({"EmptyClass", "SuppressionAnnotation"})
+
+@LoginConfig(authMethod = "MP-JWT")
+@RolesAllowed({"TRAVELLER"})
+
+@ApplicationPath("rest")
+public class BootStrap extends jakarta.ws.rs.core.Application {
+}
+
+===========================  client service +===========================
+
+package BusService;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import java.io.InputStream;
+import java.util.Properties;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+/**
+ *
+ * @author ASUS
+ */
+@ApplicationScoped
+public class BusClient {
+     public String getBuses(String source, String destination) {
+
+        String token = getToken();
+
+         Client client = ClientBuilder.newClient();
+
+        String url =
+                "http://localhost:8080/BusApplication/rest/bus/getBuses";
+
+         Response response = client.target(url)
+                .queryParam("source", source)
+                .queryParam("destination", destination)
+                .request(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + token)
+                .get();
+
+        String result = response.readEntity(String.class);
+
+        response.close();
+        client.close();
+
+        return result;
+    }
+
+    private String getToken() {
+
+        try {
+
+            Properties properties = new Properties();
+
+            InputStream input =
+                    getClass()
+                            .getClassLoader()
+                            .getResourceAsStream("client.properties");
+
+            if (input == null) {
+                throw new RuntimeException(
+                        "client.properties not found"
+                );
+            }
+
+            properties.load(input);
+
+            return properties.getProperty("jwt-string");
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            return null;
+        }
+    }
+}
+
+ ===========================  client resource +===========================
+ 
+ /*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package ClientResource;
+
+import BusService.BusClient;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.QueryParam;
+
+/**
+ *
+ * @author ASUS
+ */
+@Path("/client")
+public class ClientResource {
+     @Inject
+    private BusClient busClient;
+
+    @GET
+    @Path("/buses")
+    public String getBuses(
+            @QueryParam("source") String source,
+            @QueryParam("destination") String destination) {
+
+        return busClient.getBuses(source, destination);
+    }
+}
+
+
+ ===========================  client and admin config +===========================
+
+
+package clientconfig;
+
+import jakarta.ws.rs.ApplicationPath;
+import jakarta.ws.rs.core.Application;
+
+
+
+@ApplicationPath("/rest")
+public class ApplicationConfig extends Application{
+}
+
+
+ ===========================  html +===========================
+
+<!DOCTYPE html>
+<html>
+
+    <head>
+
+        <title>Bus Search</title>
+
+        <style>
+
+            body {
+                font-family: Arial, sans-serif;
+                margin: 40px;
+            }
+
+            h2 {
+                margin-bottom: 20px;
+            }
+
+            label {
+                margin-right: 10px;
+            }
+
+            select {
+                padding: 8px;
+                margin-right: 20px;
+            }
+
+            button {
+                padding: 8px 20px;
+                cursor: pointer;
+            }
+
+            table {
+                margin-top: 30px;
+                border-collapse: collapse;
+                width: 100%;
+            }
+
+            th, td {
+                border: 1px solid black;
+                padding: 10px;
+                text-align: left;
+            }
+
+            th {
+                background-color: #eeeeee;
+            }
+
+            #message {
+                margin-top: 20px;
+            }
+
+        </style>
+
+    </head>
+
+    <body>
+
+        <h2>Bus Search</h2>
+
+        <label>Source:</label>
+
+        <select id="source">
+
+            <option value="Surat">
+                Surat
+            </option>
+
+            <option value="Mumbai">
+                Mumbai
+            </option>
+
+            <option value="Ahmedabad">
+                Ahmedabad
+            </option>
+
+        </select>
+
+
+        <label>Destination:</label>
+
+        <select id="destination">
+
+            <option value="Mumbai">
+                Mumbai
+            </option>
+
+            <option value="Ahmedabad">
+                Ahmedabad
+            </option>
+
+            <option value="Pune">
+                Pune
+            </option>
+
+            <option value="Surat">
+                Surat
+            </option>
+
+        </select>
+
+
+        <button onclick="searchBuses()">
+            Search
+        </button>
+
+
+        <div id="message"></div>
+
+
+        <table id="busTable">
+
+            <thead>
+
+                <tr>
+
+                    <th>Bus ID</th>
+
+                    <th>Bus Name</th>
+
+                    <th>Bus Type</th>
+
+                    <th>Registration No</th>
+
+                    <th>Capacity</th>
+
+                    <th>Arrival Time</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody id="busBody">
+
+            </tbody>
+
+        </table>
+
+
+        <script>
+
+            function searchBuses() {
+
+                const source =
+                        document.getElementById("source").value;
+
+                const destination =
+                        document.getElementById("destination").value;
+
+
+                document.getElementById("message").innerHTML =
+                        "Searching...";
+
+
+                fetch(
+                        "rest/client/buses?source="
+                        + encodeURIComponent(source)
+                        + "&destination="
+                        + encodeURIComponent(destination)
+                        )
+
+                        .then(response => {
+
+                            return response.text().then(text => {
+
+                                if (!response.ok) {
+
+                                    throw new Error(
+                                            "HTTP " + response.status + ": " + text
+                                            );
+                                }
+
+                                try {
+                                    return JSON.parse(text);
+                                } catch (e) {
+
+                                    throw new Error(
+                                            "Server did not return JSON: " + text
+                                            );
+                                }
+
+                            });
+
+                        })
+
+                        .then(data => {
+
+                            const tbody =
+                                    document.getElementById("busBody");
+
+
+                            tbody.innerHTML = "";
+
+
+                            if (data.length === 0) {
+
+                                document.getElementById("message").innerHTML =
+                                        "No buses found.";
+
+                                return;
+
+                            }
+
+
+                            document.getElementById("message").innerHTML =
+                                    "";
+
+
+                            data.forEach(bus => {
+
+                                const row =
+                                        document.createElement("tr");
+
+
+                                row.innerHTML =
+                                        "<td>"
+                                        + bus.busid
+                                        + "</td>"
+
+                                        +
+                                        "<td>"
+                                        + bus.busname
+                                        + "</td>"
+
+                                        +
+                                        "<td>"
+                                        + bus.bustype
+                                        + "</td>"
+
+                                        +
+                                        "<td>"
+                                        + bus.registrationno
+                                        + "</td>"
+
+                                        +
+                                        "<td>"
+                                        + bus.capacity
+                                        + "</td>"
+
+                                        +
+                                        "<td>"
+                                        + bus.arrivaltime
+                                        + "</td>";
+
+
+                                tbody.appendChild(row);
+
+                            });
+
+                        })
+
+
+                        .catch(error => {
+
+                            document.getElementById("message").innerHTML =
+                                    "Error: " + error.message;
+
+                        });
+
+            }
+
+        </script>
+
+    </body>
+
+</html> 
+
+
+============================== command ================================
+
+java -jar payara-micro-6.2025.9.jar --deploy D:\sem9\MSA\CrudAPP\artifact\CrudAPP.war --port 8085 --addlibs mysql-connector-j-9.5.0.jar --domainconfig domain.xml
+
+java -jar payara-micro-6.2025.9.jar --domainConfig domain.xml --addlibs mysql-connector-j-9.5.0.jar --deploy artifact/maitriconsume.war --port 9092
+
